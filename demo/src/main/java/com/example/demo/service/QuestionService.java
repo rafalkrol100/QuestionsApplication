@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.QuestionDao;
+import com.example.demo.model.Answer;
 import com.example.demo.model.Question;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,12 +17,19 @@ public class QuestionService {
     private final QuestionDao questionDao;
 
     @Autowired
-    public QuestionService(@Qualifier("fakeDao") QuestionDao questionDao) {
+    public QuestionService(@Qualifier("postgres") QuestionDao questionDao) {
         this.questionDao = questionDao;
     }
 
     public int addQuestion(Question question) {
-        return questionDao.insertQuestion(question);
+        UUID id = UUID.randomUUID();
+        int ret = questionDao.insertQuestion(id, question);
+
+        for (Answer answer : question.getAnswers()) {
+            questionDao.insertAnswers(answer, id);
+        }
+
+        return ret;
     }
 
     public List<Question> getAllQuestions() {
