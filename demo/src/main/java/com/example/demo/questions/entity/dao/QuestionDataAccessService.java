@@ -44,11 +44,17 @@ public class QuestionDataAccessService implements QuestionDao {
     @Override
     public List<Question> getQuestionByIds(List<UUID> ids) {
         List<Question> questions = new ArrayList<>();
-        final String sql = "SELECT questionId, contents FROM question WHERE id = ?";
+        final String sql = "SELECT questionId, contents FROM question WHERE questionId = ?";
 
         for (UUID id : ids) {
             Question question = jdbcTemplate.queryForObject(sql, new Object[]{id}, mapQuestionFromDb());
-            questions.add(question);
+            assert question != null;
+            List<Answer> answers = selectAllAnswers(question.getId());
+            questions.add(Question.builder()
+                    .id(question.getId())
+                    .contents(question.getContents())
+                    .answers(answers)
+                    .build());
         }
 
         return questions;
