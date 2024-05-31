@@ -1,9 +1,11 @@
-package com.example.demo.model;
+package com.example.demo.questions.control.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 
 import java.util.Objects;
 
+@Builder
 public class Answer {
     private final String contents;
     private final boolean isCorrect;

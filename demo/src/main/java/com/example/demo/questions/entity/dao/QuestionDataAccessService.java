@@ -1,7 +1,7 @@
-package com.example.demo.dao;
+package com.example.demo.questions.entity.dao;
 
-import com.example.demo.model.Answer;
-import com.example.demo.model.Question;
+import com.example.demo.questions.control.model.Answer;
+import com.example.demo.questions.control.model.Question;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -20,15 +20,15 @@ public class QuestionDataAccessService implements QuestionDao {
     }
 
     @Override
-    public int insertQuestion(UUID id, Question question) {
+    public void insertQuestion(UUID id, Question question) {
         String sql = "INSERT INTO question (questionId, contents) VALUES (?, ?)";
-        return jdbcTemplate.update(sql, id, question.getContents());
+        jdbcTemplate.update(sql, id, question.getContents());
     }
 
     @Override
-    public int insertAnswers(Answer answer, UUID questionId) {
+    public void insertAnswer(Answer answer, UUID questionId) {
         String sql = "INSERT INTO answer (contents, isCorrect, questionId) VALUES (?, ?, ?)";
-        return jdbcTemplate.update(sql, answer.getContents(), answer.isCorrect(), questionId);
+        jdbcTemplate.update(sql, answer.getContents(), answer.isCorrect(), questionId);
     }
 
     @Override
@@ -42,18 +42,42 @@ public class QuestionDataAccessService implements QuestionDao {
     }
 
     @Override
-    public Optional<Question> getQuestionById(UUID id) {
-        return Optional.empty();
+    public List<Question> getQuestionByIds(List<UUID> ids) {
+        List<Question> questions = new ArrayList<>();
+        final String sql = "SELECT questionId, contents FROM question WHERE id = ?";
+
+        for (UUID id : ids) {
+            Question question = jdbcTemplate.queryForObject(sql, new Object[]{id}, mapQuestionFromDb());
+            questions.add(question);
+        }
+
+        return questions;
     }
 
     @Override
-    public int deleteQuestionById(UUID id) {
-        return 0;
+    public void deleteQuestionById(List<UUID> ids) {
+        final String sql = "DELETE FROM question WHERE questionId = ?";
+        for (UUID id : ids) {
+            deleteAnswersByQuestionId(id);
+            jdbcTemplate.update(sql, id);
+        }
     }
 
     @Override
-    public int updateQuestionById(UUID id, Question question) {
-        return 0;
+    public void updateQuestionById(Question question) {
+        UUID questionId = question.getId();
+        deleteAnswersByQuestionId(questionId);
+        for (Answer answer : question.getAnswers()) {
+            insertAnswer(answer, questionId);
+        }
+
+        final String sql = "UPDATE question SET questionId = ?, contents = ? WHERE questionId = ?";
+        jdbcTemplate.update(sql, question.getId(), question.getContents(), question.getId());
+    }
+
+    private void deleteAnswersByQuestionId(UUID questionId) {
+        final String sql = "DELETE FROM answer WHERE questionId = ?";
+        jdbcTemplate.update(sql, questionId);
     }
 
     private List<Question> selectAllQuestions() {
@@ -88,4 +112,3 @@ public class QuestionDataAccessService implements QuestionDao {
         };
     }
 }
-

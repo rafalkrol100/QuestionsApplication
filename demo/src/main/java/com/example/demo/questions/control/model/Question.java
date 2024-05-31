@@ -1,12 +1,15 @@
-package com.example.demo.model;
+package com.example.demo.questions.control.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+
 import javax.validation.constraints.*;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+@Builder
 public class Question {
     private final UUID id;
 
