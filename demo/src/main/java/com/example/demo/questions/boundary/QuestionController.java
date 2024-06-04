@@ -9,6 +9,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,8 +32,9 @@ public class QuestionController {
 
     @Operation(summary = "Get all questions")
     @GetMapping(path = "all")
-    public List<QuestionDTO> getAllQuestions() {
-        return questionService.getAllQuestions();
+    public ResponseEntity<List<QuestionDTO>> getAllQuestions() {
+        List<QuestionDTO> questions = questionService.getAllQuestions();
+        return new ResponseEntity<List<QuestionDTO>> (questions, HttpStatus.OK);
     }
 
     @Operation(summary = "Get questions by ids")
@@ -39,29 +43,53 @@ public class QuestionController {
                     content = @Content)
     })
     @GetMapping
-    public List<QuestionDTO> getQuestionsByIds(@Parameter(description = "List of question ids to be searched")
+    public ResponseEntity<List<QuestionDTO>> getQuestionsByIds(@Parameter(description = "List of question ids to be searched")
                                                @RequestParam List<UUID> id) {
-        return questionService.getQuestionsByIds(id);
+        try {
+            List<QuestionDTO> questions = questionService.getQuestionsByIds(id);
+            return new ResponseEntity<List<QuestionDTO>> (questions, HttpStatus.OK);
+        } catch (EmptyResultDataAccessException e) {
+            return new ResponseEntity<> (HttpStatus.NOT_FOUND);
+        }
     }
 
     @Operation(summary = "Add question")
     @PostMapping
-    public void addQuestion(@Parameter(description = "CreateQuestionDTO")
+    public ResponseEntity<Void> addQuestion(@Parameter(description = "CreateQuestionDTO")
                                 @Valid @NonNull @RequestBody CreateQuestionDTO question) {
         questionService.addQuestion(question);
+        return  new ResponseEntity<> (HttpStatus.NO_CONTENT);
     }
 
     @Operation(summary = "Update question")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Question not found",
+                    content = @Content)
+    })
     @PutMapping()
-    public void updateQuestion(@Parameter(description = "Id of a question to be updated") @RequestParam UUID id,
+    public ResponseEntity<Void> updateQuestion(@Parameter(description = "Id of a question to be updated") @RequestParam UUID id,
                                @Valid @NonNull @RequestBody CreateQuestionDTO question) {
-        questionService.updateQuestion(id, question);
+        try {
+            questionService.updateQuestion(id, question);
+            return  new ResponseEntity<> (HttpStatus.NO_CONTENT);
+        } catch (EmptyResultDataAccessException e) {
+            return new ResponseEntity<> (HttpStatus.NOT_FOUND);
+        }
     }
 
     @Operation(summary = "Delete questions by ids")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Question not found",
+                    content = @Content)
+    })
     @DeleteMapping()
-    public void deleteQuestionByIds(@Parameter(description = "Ids of questions to be deleted")
+    public ResponseEntity<Void> deleteQuestionByIds(@Parameter(description = "Ids of questions to be deleted")
                                         @RequestParam List<UUID> id) {
-        questionService.deleteQuestion(id);
+        try {
+            questionService.deleteQuestion(id);
+            return  new ResponseEntity<> (HttpStatus.NO_CONTENT);
+        } catch (EmptyResultDataAccessException e) {
+            return new ResponseEntity<> (HttpStatus.NOT_FOUND);
+        }
     }
 }
